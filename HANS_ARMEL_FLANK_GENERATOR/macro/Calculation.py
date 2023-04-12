@@ -21,7 +21,9 @@ class Gear(jsonObject):
 '''
 from rest_framework import serializers
 import numpy as np
-import tkinter as tk
+import time
+
+
 
 
 
@@ -49,22 +51,17 @@ class Gear:
         self.noProfiles = noProfiles
         self.noPoints = noPoints
 
-        # output calculations
 
-        # calculate mde at heel from mde at definition sphere
 
         m = self.md * (self.outRadCone / self.defRad)
 
-        # calculate backlash at heel from backlash at definition sphere
 
         backlash = self.backlashDef * (self.outRadCone / self.defRad)
 
-        # Pitch angle is given by angle of pitch cone for Gear & Pinion
 
         pitchAngleGear = np.arcsin(((m * self.nGear) / (2 * self.outRadCone)))
         pitchAnglePinion = np.arcsin(((m * self.nPinion) / (2 * self.outRadCone)))
 
-        # calculations at definition sphere
 
         pitchAngleDefGear = np.arcsin((self.md * self.nGear) / (2 * self.defRad))
         pitchAngleDefPinion = np.arcsin((self.md * self.nPinion) / (2 * self.defRad))
@@ -80,7 +77,6 @@ class Gear:
             self.pressAngle) * self.gx * self.md - self.backlashDef * (1 - self.backlashDist)) / (
                                                  self.md * self.nGear / 2))
 
-        # calculation at heel defRad
 
         pitchCircleAngleGear = (1 / (np.sin(pitchAngleGear) * np.cos(self.pressAngle))) * np.arctan(
             np.sin(self.pressAngle) * np.tan(pitchAngleGear))
@@ -96,7 +92,7 @@ class Gear:
         toothAnglePcirBacklashGear = (
                 (np.pi * m / 2 + 2 * np.tan(self.pressAngle) * gx * m - backlash * (1 - self.backlashDist)) / (
                 m * self.nGear / 2))
-        #self.SphericalGear(inRadCone, outRadCone, noProfiles, noPoints, pitchCircleAngleGear, baseAngleGear,toothAnglePcirBacklashGear, m, nGear, cirPitchAngleGear)
+        self.SphericalGear(inRadCone, outRadCone, noProfiles, noPoints, pitchCircleAngleGear, baseAngleGear,toothAnglePcirBacklashGear, m, nGear, cirPitchAngleGear)
         self.SphericalPinion(inRadCone, outRadCone, noProfiles, noPoints, pitchCircleAnglePinion, baseAnglePinion, toothAnglePcirBacklashPinion, m, nPinion, cirPitchAnglePinion)
 
     def SphericalGear(self, inRadCone, outRadCone, noProfiles, noPoints,pitchCircleAngle, baseAngle, toothAnglePcirBacklash,m, n, cirPitchAngle):
@@ -105,18 +101,18 @@ class Gear:
         newLine = np.array(["\t\t", "\t\t", "\t\t", "\t\t", "\t\t", "\t\t\t\t\t", "radius"])
         table = np.vstack([table, newLine])
         l = 3
-        num = noPoints
         i = 1
+        self.flagAng = True
 
         for varRad in np.arange(inRadCone, outRadCone + 0.0000001, (outRadCone - inRadCone) / (noProfiles - 1)):
 
-            radius = varRad
-
-            x = (np.sin(pitchCircleAngle * np.sin(baseAngle)) * np.cos(pitchCircleAngle) - np.sin(
-                pitchCircleAngle) * np.sin(baseAngle) * np.cos(pitchCircleAngle * np.sin(baseAngle))) * radius
-            y = (-1 * np.sin(pitchCircleAngle) * np.sin(pitchCircleAngle * np.sin(baseAngle)) - np.cos(
-                pitchCircleAngle) * np.sin(baseAngle) * np.cos(pitchCircleAngle * np.sin(baseAngle))) * radius
-            z = (np.cos(baseAngle) * np.cos(pitchCircleAngle * np.sin(baseAngle))) * radius
+            x = (np.sin(pitchCircleAngle * np.sin(baseAngle)) * np.cos(pitchCircleAngle) - np.sin(pitchCircleAngle) * np.sin(
+                baseAngle) * np.cos(
+                pitchCircleAngle * np.sin(baseAngle))) * varRad
+            y = (-1 * np.sin(pitchCircleAngle) * np.sin(pitchCircleAngle * np.sin(baseAngle)) - np.cos(pitchCircleAngle) * np.sin(
+                baseAngle) * np.cos(
+                pitchCircleAngle * np.sin(baseAngle))) * varRad
+            z = (np.cos(baseAngle) * np.cos(pitchCircleAngle * np.sin(baseAngle))) * varRad
 
             if np.abs(y) > 0.0001:
                 angForPoint = np.arctan(np.abs(x / y))
@@ -124,18 +120,15 @@ class Gear:
                 angForPoint = np.pi / 2
 
             angAtPcircle = angForPoint
-            self.flagAng = True
 
-            # appel de la fonction ProfileTypeSpherical à définir
 
             self.ProfileTypeSpherical(varRad, baseAngle, toothAnglePcirBacklash, m, n, angAtPcircle)
-            self.ldif = np.round((num - 1 * 1 + 0.0000001 / self.angIntersect) + 0.5, 0)
-            varin = (self.angIntersect / (num - 1))
+            ldif = np.round((noPoints - 1 * 1 + 0.0000001 / self.angIntersect) + 0.5, 0)
+            varin = (self.angIntersect / (noPoints - 1))
 
             counter = 1
             var = 0
 
-            # calculaton of the first and third flank
 
             while counter <= noPoints:
 
@@ -145,10 +138,6 @@ class Gear:
                     var * np.sin(baseAngle))) * varRad
                 z = (np.cos(baseAngle) * np.cos(var * np.sin(baseAngle))) * varRad
 
-                if np.abs(y) > 0.0001:
-                    self.angForPoint = np.arctan(np.abs(x / y))
-                else:
-                    self.angForPoint = np.pi / 2
 
                 x1 = x * np.cos(angAtPcircle) - y * np.sin(angAtPcircle)
                 y1 = y * np.cos(angAtPcircle) + x * np.sin(angAtPcircle)
@@ -178,8 +167,13 @@ class Gear:
                     self.x1 = x * np.cos((-cirPitchAngle)) + y * np.sin((-cirPitchAngle))
                     self.y1 = y * np.cos((-cirPitchAngle)) - x * np.sin((-cirPitchAngle))
 
+                    # rotation along Y axis
+                    y = -y1 * np.cos(np.pi / 2) - z * np.sin(np.pi / 2)
+                    z1 = z * np.cos(np.pi / 2) - y1 * np.sin(np.pi / 2)
+
             i += 1
-        self.WriteFile('file1.txt', table, "Pinion Gear's Macro Coordinates")
+        self.WriteFile('file1.txt', table, "Side Gear's Macro Coordinates")
+
 
 
     def SphericalPinion(self, inRadCone, outRadCone, noProfiles, noPoints,pitchCircleAngle, baseAngle, toothAnglePcirBacklash,m, n, cirPitchAngle):
@@ -195,14 +189,6 @@ class Gear:
             self.radius = varRad
             self.var = pitchCircleAngle
 
-            # Calculate the pitch point
-
-            # This angle is useful in calculation of intersection of two flank
-
-            # The meshing between pinion and gear is done at pitch point
-
-            # this angle is used for rotating flank to get pitch point on Y axis
-
             x = (np.sin(self.var * np.sin(baseAngle)) * np.cos(self.var) - np.sin(self.var) * np.sin(baseAngle) * np.cos(
                 self.var * np.sin(baseAngle))) * self.radius
             y = (-1 * np.sin(self.var) * np.sin(self.var * np.sin(baseAngle)) - np.cos(self.var) * np.sin(baseAngle) * np.cos(
@@ -217,7 +203,7 @@ class Gear:
             angAtPcircle = angForPoint
 
 
-            # appel de la fonction ProfileTypeSpherical à définir
+
 
             self.ProfileTypeSpherical(varRad, baseAngle, toothAnglePcirBacklash, m, n, angAtPcircle)
             num = noPoints
@@ -227,7 +213,6 @@ class Gear:
             counter = 1
             var = 0
 
-            # calculaton of the first and third flank
 
             while counter <= noPoints:
 
@@ -274,7 +259,6 @@ class Gear:
                     self.x1 = x * np.cos((-cirPitchAngle)) + y * np.sin((-cirPitchAngle))
                     self.y1 = y * np.cos((-cirPitchAngle)) - x * np.sin((-cirPitchAngle))
 
-                    # rotation along Y axis
                     y = -y1 * np.cos(np.pi / 2) - z * np.sin(np.pi / 2)
                     z1 = z * np.cos(np.pi / 2) - y1 * np.sin(np.pi / 2)
 
